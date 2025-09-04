@@ -37,7 +37,7 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
-add_executable(takeoff_without_gnc src/a.cpp)
+add_executable(takeoff_without_gnc src/takeoff_without_gnc.cpp)
 ament_target_dependencies(takeoff_without_gnc
   rclcpp
   std_msgs
