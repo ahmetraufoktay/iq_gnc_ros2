@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(iq_gnc_ros2)
+project(iq_gnc)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -37,6 +37,14 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}
 )
 
+add_executable(takeoff_without_gnc src/a.cpp)
+ament_target_dependencies(takeoff_without_gnc
+  rclcpp
+  std_msgs
+  geometry_msgs
+  mavros_msgs
+)
+
 add_executable(set_wp src/set_wp.cpp src/gnc_functions.cpp)
 ament_target_dependencies(set_wp
   rclcpp
@@ -69,6 +77,7 @@ ament_target_dependencies(gnc_example
 )
 
 install(TARGETS
+  takeoff_without_gnc
   set_wp
   square
   gnc_example

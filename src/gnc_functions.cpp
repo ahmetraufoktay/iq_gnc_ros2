@@ -235,28 +235,24 @@ int GNCFunctions::arm() {
 	// arming
 	RCLCPP_INFO(this->get_logger(), "Arming drone");
 	
-    auto arm_request = std::make_shared<mavros_msgs::srv::CommandBool::Request>();
-	arm_request->value = true;
-    
     while (!arming_client->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
-            RCLCPP_ERROR(this->get_logger(), "Arming client interrupted while waiting for the service. Exiting.");
-            return 0;
+          RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+          return -1;
         }
-        RCLCPP_INFO(this->get_logger(), "Arming service not available, waiting again...");
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
 
-    auto result = arming_client->async_send_request(arm_request);
-    this->local_pos_pub->publish(waypoint_g);
+    auto req = std::make_shared<mavros_msgs::srv::CommandBool::Request>();
+    req->value = true;
 
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result)
-        == rclcpp::FutureReturnCode::SUCCESS)
+    auto future = arming_client->async_send_request(req);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future)
+          == rclcpp::FutureReturnCode::SUCCESS) 
     {
-        RCLCPP_INFO(this->get_logger(), "Arming Successfull");
-        return 0;
+        RCLCPP_INFO(this->get_logger(), "Arming Succesfull %d", future.get()->success);
     } else {
-        RCLCPP_ERROR(this->get_logger(), "Arming Failed With %d", result.get()->success);
-        return -1;
+        RCLCPP_ERROR(this->get_logger(), "Arming Failed");
     }
 
     return 0;
@@ -276,30 +272,25 @@ int GNCFunctions::takeoff(float takeoff_alt) {
 
     // Request takeoff
 
-    auto takeoff_request = std::make_shared<mavros_msgs::srv::CommandTOL::Request>();
-    takeoff_request->altitude = takeoff_alt;
-    
-    while (!takeoff_client->wait_for_service(2s)) {
+    while (!takeoff_client->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
-            RCLCPP_ERROR(this->get_logger(), "Takeoff client interrupted while waiting for the service. Exiting.");
-            return 0;
+          RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+          return -1;
         }
-        RCLCPP_INFO(this->get_logger(), "Takeoff service not available, waiting again...");
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
 
-    auto takeoff_result = takeoff_client->async_send_request(takeoff_request);
+    auto req = std::make_shared<mavros_msgs::srv::CommandTOL::Request>();
+    req->altitude = takeoff_alt;
 
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), takeoff_result)
-        == rclcpp::FutureReturnCode::SUCCESS)
-    {
-        RCLCPP_INFO(this->get_logger(), "Takeoff Sent %d", takeoff_result.get()->success);
-        return 0;
+    auto future = takeoff_client->async_send_request(req);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future)
+        == rclcpp::FutureReturnCode::SUCCESS) {
+        RCLCPP_INFO(this->get_logger(), "Takeoff succesfull. CODE: %d", future.get()->success);
     } else {
-        RCLCPP_ERROR(this->get_logger(), "Takeoff Failed ");
-        return -2;
+        RCLCPP_ERROR(this->get_logger(), "Takeoff failed. CODE: %d", future.get()->success);
     }
-    
-    rclcpp::sleep_for(std::chrono::seconds(2));
+
     return 0;
 }
 
@@ -333,55 +324,49 @@ int GNCFunctions::check_waypoint_reached(float pos_tolerance, float heading_tole
 }
 
 int GNCFunctions::set_mode(std::string mode) {
-    auto request = std::make_shared<mavros_msgs::srv::SetMode::Request>();
-    request->base_mode = 0;
-    request->custom_mode = mode;
-
-    if (!set_mode_client->wait_for_service(std::chrono::seconds(2))) {
-        RCLCPP_ERROR(this->get_logger(), "SetMode service not available");
-        return -1;
-    }
-
-    auto result_future = set_mode_client->async_send_request(request);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future)
-        == rclcpp::FutureReturnCode::SUCCESS)
-    {
-        if (result_future.get()->mode_sent) {
-            RCLCPP_INFO(this->get_logger(), "Mode sent to %s", mode.c_str());
-            return 0;
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "SetMode request failed");
-            return -1;
+    while (!set_mode_client->wait_for_service(1s)) {
+        if (!rclcpp::ok()) {
+          RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+          return -1;
         }
-    } else {
-        RCLCPP_ERROR(this->get_logger(), "SetMode service call failed");
-        return -1;
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
     }
+
+    auto req = std::make_shared<mavros_msgs::srv::SetMode::Request>();
+    req->base_mode = 0;
+    req->custom_mode = mode;
+
+    auto future = set_mode_client->async_send_request(req);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future)
+        == rclcpp::FutureReturnCode::SUCCESS) {
+        RCLCPP_INFO(this->get_logger(), "Set Mode to %s. Mode Sent : %d", mode.c_str(), future.get()->mode_sent);
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Set Mode Failed : %d", future.get()->mode_sent);
+    }
+      
+    return 0;
 }
 
 int GNCFunctions::land() {
+    while (!land_client->wait_for_service(1s)) {
+        if (!rclcpp::ok()) {
+          RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+          return -1;
+        }
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+    }
+
     auto request = std::make_shared<mavros_msgs::srv::CommandTOL::Request>();
 
-    if (!land_client->wait_for_service(std::chrono::seconds(2))) {
-        RCLCPP_ERROR(this->get_logger(), "Land service not available");
-        return -1;
+    auto future = land_client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future)
+        == rclcpp::FutureReturnCode::SUCCESS) {
+        RCLCPP_INFO(this->get_logger(), "Takeoff succesfull. CODE: %d", future.get()->success);
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "Takeoff failed. CODE: %d", future.get()->success);
     }
 
-    auto result_future = land_client->async_send_request(request);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future)
-        == rclcpp::FutureReturnCode::SUCCESS) 
-    {
-        if (result_future.get()->success) {
-            RCLCPP_INFO(this->get_logger(), "Landing command set successfully");
-            return 0;
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Landing request failed");
-            return -1;
-        }
-    } else {
-        RCLCPP_ERROR(this->get_logger(), "Land service call failed");
-        return -1;
-    }
+    return 0;
 }
 
 int GNCFunctions::set_speed(float speed__mps) {

@@ -37,7 +37,9 @@ struct gnc_api_waypoint{
 
 class GNCFunctions : public rclcpp::Node, public std::enable_shared_from_this<GNCFunctions> {
     public:
-        GNCFunctions() : Node("gnc_node") {
+        GNCFunctions() : GNCFunctions("gnc_node") {}
+
+        GNCFunctions(const std::string& node_name) : Node(node_name) {
             init_publishers_subscribers();
         }
     
