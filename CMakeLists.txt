@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(iq_gnc_ros2)
+project(iq_gnc)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -45,7 +45,7 @@ ament_target_dependencies(takeoff_without_gnc
   mavros_msgs
 )
 
-add_executable(set_wp src/set_wp.cpp src/gnc_functions.cpp)
+add_executable(set_wp src/set_wp.cpp src/gnc_node.cpp)
 ament_target_dependencies(set_wp
   rclcpp
   std_msgs
@@ -56,7 +56,7 @@ ament_target_dependencies(set_wp
 )
 
 # Build square node
-add_executable(square src/square.cpp src/gnc_functions.cpp)
+add_executable(square src/square.cpp src/gnc_node.cpp)
 ament_target_dependencies(square
   rclcpp
   std_msgs
@@ -66,7 +66,7 @@ ament_target_dependencies(square
   mavros_msgs
 )
 
-add_executable(gnc_example src/gnc_tutorial.cpp src/gnc_functions.cpp)
+add_executable(gnc_example src/gnc_tutorial.cpp src/gnc_node.cpp)
 ament_target_dependencies(gnc_example
   rclcpp
   std_msgs

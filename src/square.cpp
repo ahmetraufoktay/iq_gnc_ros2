@@ -1,78 +1,43 @@
-#include "gnc_functions.hpp"
+#include "gnc_node.hpp"
 #include <rclcpp/rclcpp.hpp>
 //include API 
 
-class SquareNode : public GNCFunctions {
+class SquareNode : public GNC::NodeAPI {
 	public:
-		SquareNode() : GNCFunctions() {
-			gnc_api_waypoint nextWayPoint;
+		SquareNode()
+		 : NodeAPI("square_node")
+		{
+			mission_queue.push(wait4connect());
+			mission_queue.push(wait4start());
+			mission_queue.push(initialize_local_frame());
+			mission_queue.push(arm());
+			mission_queue.push(takeoff(3.0));
 
-			nextWayPoint.x = 0; nextWayPoint.y = 0; nextWayPoint.z = 3; nextWayPoint.psi = 0;
-			waypointList.push_back(nextWayPoint);
+			nextWayPoint.x = 5.0; nextWayPoint.y = 0.0; nextWayPoint.z = 3.0; nextWayPoint.psi = -90.0;
+			mission_queue.push(go_to_waypoint(nextWayPoint));
 
-			nextWayPoint.x = 5; nextWayPoint.y = 0; nextWayPoint.z = 3; nextWayPoint.psi = -90;
-			waypointList.push_back(nextWayPoint);
+			nextWayPoint.x = 5.0; nextWayPoint.y = 5.0; nextWayPoint.z = 3.0; nextWayPoint.psi = 0.0;
+			mission_queue.push(go_to_waypoint(nextWayPoint));
 
-			nextWayPoint.x = 5; nextWayPoint.y = 5; nextWayPoint.z = 3; nextWayPoint.psi = 0;
-			waypointList.push_back(nextWayPoint);
+			nextWayPoint.x = 0.0; nextWayPoint.y = 5.0; nextWayPoint.z = 3.0; nextWayPoint.psi = 90.0;
+			mission_queue.push(go_to_waypoint(nextWayPoint));
+			
+			nextWayPoint.x = 0.0; nextWayPoint.y = 0.0; nextWayPoint.z = 3.0; nextWayPoint.psi = 180.0;
+			mission_queue.push(go_to_waypoint(nextWayPoint));
 
-			nextWayPoint.x = 0; nextWayPoint.y = 5; nextWayPoint.z = 3; nextWayPoint.psi = 90;
-			waypointList.push_back(nextWayPoint);
-
-			nextWayPoint.x = 0; nextWayPoint.y = 0; nextWayPoint.z = 3; nextWayPoint.psi = 180;
-			waypointList.push_back(nextWayPoint);
-
-			nextWayPoint.x = 0; nextWayPoint.y = 0; nextWayPoint.z = 3; nextWayPoint.psi = 0;
-			waypointList.push_back(nextWayPoint);
-
-			wait4connect();
-			wait4start();
-			initialize_local_frame();
-			arm();
-			takeoff(3.0);
-		}
-
-		void run() {
-			rclcpp::Rate rate(2.0); // 2 Hz control loop
-			size_t counter = 0;
-
-			while (rclcpp::ok())
-			{
-				rclcpp::spin_some(this->get_node_base_interface()); // process subscriptions/callbacks
-
-				if (check_waypoint_reached(0.3) == 1)
-				{
-					if (counter < waypointList.size())
-					{
-						set_destination(
-							waypointList[counter].x,
-							waypointList[counter].y,
-							waypointList[counter].z,
-							waypointList[counter].psi
-						);
-						counter++;
-					}
-					else
-					{
-						// Land after all waypoints are reached
-						land();
-						break; // exit loop after landing
-					}
-				}
-
-				rate.sleep();
-			}
+			mission_queue.push(land());
 		}
 	
-	private:
-    	std::vector<gnc_api_waypoint> waypointList;
+		private:
+			GNC::WayPoint nextWayPoint;
+
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto square_node = std::make_shared<SquareNode>();
-    square_node->run();
+    rclcpp::spin(square_node);
     rclcpp::shutdown();
     return 0;
 }

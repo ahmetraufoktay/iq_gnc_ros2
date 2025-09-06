@@ -1,32 +1,23 @@
-#include "gnc_functions.hpp"
+#include "gnc_node.hpp"
 #include <rclcpp/rclcpp.hpp>
-//include API 
 
 using namespace std::chrono_literals;
 
-class GNCExample : public GNCFunctions {
+class GNCExample : public GNC::NodeAPI {
 	public:
-		GNCExample() : GNCFunctions("gnc_example") {
-			wait4connect();
-			wait4start();
-			initialize_local_frame();
-		}
-
-		void run() {
-			arm();
-			set_mode("GUIDED");
-			takeoff(3.0);
-			rclcpp::sleep_for(std::chrono::seconds(10));
-			land();
+		GNCExample() : NodeAPI("gnc_example") {
+			mission_queue.push(wait4connect());
+			mission_queue.push(wait4start());
+			mission_queue.push(initialize_local_frame());
+			mission_queue.push(arm());
+			mission_queue.push(takeoff(3.0));
 		}
 };
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    auto gnc_node = std::make_shared<GNCExample>();
-    rclcpp::spin_some(gnc_node);
-	gnc_node->run();
+    rclcpp::spin(std::make_shared<GNCExample>());
     rclcpp::shutdown();
     return 0;
 }

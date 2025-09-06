@@ -1,32 +1,26 @@
-#include "gnc_functions.hpp"
+#include "gnc_node.hpp"
 #include <rclcpp/rclcpp.hpp>
-//include API 
 
-class SetWPNode : public GNCFunctions {
+class SetWPNode : public GNC::NodeAPI {
 	public:
-		SetWPNode() : GNCFunctions() {
-			wait4connect();
-            wait4start();
-            arm();
-            takeoff_global(30.2, 80.5, 5);
-            
+		SetWPNode() : NodeAPI("set_wp") {
+			mission_queue.push(wait4connect());
+			mission_queue.push(wait4start());
+			mission_queue.push(initialize_local_frame());
+			mission_queue.push(arm());
+            mission_queue.push(takeoff_global(30.2, 80.5, 5));
 
-            timer_ = this->create_wall_timer(
-                std::chrono::milliseconds(500),
-                [this]() {this->control_loop();}
-            );
+            mission_queue.push(set_yaw(10, 20, -1, 1));
+            mission_queue.push({
+                [this]() -> bool {
+                    set_destination_lla_raw(-35.364261, 149.165230, 5);
+                    return true; 
+                },
+                []() {
+                    RCLCPP_INFO(rclcpp::get_logger("set_wp"), "Publishing raw LLA waypoint");
+                }
+            });          
         }
-	
-	private:
-        void control_loop() {
-            // Set yaw (angle, speed, direction, relative)
-            set_yaw(10, 20, -1, 1);
-
-            // Set global LLA destination
-            set_destination_lla_raw(-35.364261, 149.165230, 5);
-        }
-
-        rclcpp::TimerBase::SharedPtr timer_;
 };
 
 int main(int argc, char **argv)
