@@ -13,20 +13,23 @@ find_package(nav_msgs REQUIRED)
 find_package(geographic_msgs REQUIRED)
 find_package(mavros_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(yolov8_msgs REQUIRED)
 
-#find_package(catkin REQUIRED COMPONENTS
-#  mavros
-#  std_msgs
-#  geometry_msgs
-#  mavros_msgs
-#  rospy
-#  sensor_msgs
-#)
+find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
 
-#include_directories(
-#  include
-#  ${catkin_INCLUDE_DIRS}
-#)
+
+add_library(gnc_node_lib src/gnc_node.cpp)
+ament_target_dependencies(gnc_node_lib
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  geographic_msgs
+  mavros_msgs
+)
+target_include_directories(gnc_node_lib PUBLIC include)
+
 
 include_directories(
   include
@@ -45,56 +48,37 @@ ament_target_dependencies(takeoff_without_gnc
   mavros_msgs
 )
 
-add_executable(set_wp src/set_wp.cpp src/gnc_node.cpp)
-ament_target_dependencies(set_wp
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  geographic_msgs
-  mavros_msgs
-)
+add_executable(set_wp src/set_wp.cpp)
+target_link_libraries(set_wp gnc_node_lib)
+ament_target_dependencies(set_wp rclcpp)
 
-# Build square node
-add_executable(square src/square.cpp src/gnc_node.cpp)
-ament_target_dependencies(square
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  geographic_msgs
-  mavros_msgs
-)
+add_executable(square src/square.cpp)
+target_link_libraries(square gnc_node_lib)
+ament_target_dependencies(square rclcpp)
 
-add_executable(gnc_example src/gnc_tutorial.cpp src/gnc_node.cpp)
-ament_target_dependencies(gnc_example
+add_executable(gnc_example src/gnc_tutorial.cpp)
+target_link_libraries(gnc_example gnc_node_lib)
+ament_target_dependencies(gnc_example rclcpp)
+
+add_executable(search_and_rescue src/sr.cpp)
+target_link_libraries(search_and_rescue gnc_node_lib)
+target_link_libraries(search_and_rescue ${OpenCV_LIBS})
+ament_target_dependencies(search_and_rescue
   rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  geographic_msgs
-  mavros_msgs
+  yolov8_msgs
+  sensor_msgs
+  cv_bridge
 )
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 install(TARGETS
   takeoff_without_gnc
   set_wp
   square
   gnc_example
+  search_and_rescue
   DESTINATION lib/${PROJECT_NAME}
 )
-
-#target_link_libraries(square ${catkin_LIBRARIES})
-
-#target_link_libraries(gnc_example ${catkin_LIBRARIES})
-
-#add_executable(sub_sol src/subscriber_sol.cpp)
-#target_link_libraries(sub_sol ${catkin_LIBRARIES})
-
-#add_executable(avoidance_sol src/avoidance_sol.cpp)
-#target_link_libraries(avoidance_sol ${catkin_LIBRARIES})
-
-# Add tutorial add_executable lines here 
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

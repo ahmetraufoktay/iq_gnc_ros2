@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>iq_gnc_ros2</name>
-  <version>0.0.0</version>
-  <description>The iq_gnc package</description>
-  <maintainer email="iq@todo.todo">iq</maintainer>
+  <version>0.0.1</version>
+  <description>The iq_gnc_ros2 package</description>
+  <maintainer email="68822176+ahmetraufoktay@users.noreply.github.com">rauf</maintainer>
   <license>Apache-2.0</license>
 
   <!-- Build tool -->
@@ -26,10 +26,13 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>geographic_msgs</exec_depend>
-
+  <exec_depend>yolov8_msgs</exec_depend>
+  
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  
+  <build_depend>opencv4</build_depend>
+  <exec_depend>opencv4</exec_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
