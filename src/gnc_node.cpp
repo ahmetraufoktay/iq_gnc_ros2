@@ -382,10 +382,10 @@ namespace GNC {
                 );
 
                 RCLCPP_INFO(this->get_logger(), 
-                            "Going to waypoint at (%.2f, %.2f, %.2f)",
-                            waypoint.x,
-                            waypoint.y,
-                            waypoint.z
+                        "Going to waypoint at (%.2f, %.2f, %.2f)",
+                        waypoint.x,
+                        waypoint.y,
+                        waypoint.z
                 );
             }
         };

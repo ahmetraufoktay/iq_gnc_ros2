@@ -71,12 +71,20 @@ ament_target_dependencies(search_and_rescue
 )
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+add_executable(avoidance src/avoidance.cpp)
+target_link_libraries(avoidance gnc_node_lib)
+ament_target_dependencies(avoidance 
+  rclcpp
+  sensor_msgs
+)
+
 install(TARGETS
   takeoff_without_gnc
   set_wp
   square
   gnc_example
   search_and_rescue
+  avoidance
   DESTINATION lib/${PROJECT_NAME}
 )
 
